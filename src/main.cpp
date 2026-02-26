@@ -20,6 +20,8 @@ bool uart_status = false; // false: uart生きてる, true: uart死んでる
 
 bool is_completed = false; // 条件達成時true
 
+bool multi_states[5] = {false}; // [0]: sub uart, [1]: main can1, [2]: main can2, [3]: sub can1, [4]: sub can2
+
 int main() {
     mbed::HighResClock::time_point now_time = HighResClock::now ();
     mbed::HighResClock::time_point curr_time = HighResClock::now ();
@@ -65,9 +67,16 @@ int main() {
                 curr_state = LedState::Clear;
             }
 
+            // multi_statesの更新
+            multi_states[0] = uart_status;
+            multi_states[1] = can_status1[0];
+            multi_states[2] = can_status1[1];
+            multi_states[3] = can_status2[0];
+            multi_states[4] = can_status2[1];
+
             // 状態送信
             if (curr_state != prev_state) {
-                led.sendLedState(curr_state);
+                led.sendLedState(curr_state, multi_states, 5);
                 prev_state = curr_state;
             }
         }

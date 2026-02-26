@@ -19,8 +19,10 @@ public:
 
     /**
      * @param state 送信したい状態(LedState列挙型)
+     * @param bool_states 送信したいbool値の配列
+     * @param num_bools bool_statesの要素数
      */
-    void sendLedState(LedState state);
+    void sendLedState(LedState state, const bool* bool_states, int num_bools);
 
 private:
     BufferedSerial _nano_serial;
