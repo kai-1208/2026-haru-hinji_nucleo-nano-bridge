@@ -68,9 +68,9 @@ int main() {
             }
 
             // multi_statesの更新
-            multi_states[0] = uart_status;
-            multi_states[1] = can_status1[0];
-            multi_states[2] = can_status1[1];
+            multi_states[0] = can_status1[0];
+            multi_states[1] = can_status1[1];
+            multi_states[2] = uart_status;
             multi_states[3] = can_status2[0];
             multi_states[4] = can_status2[1];
 
