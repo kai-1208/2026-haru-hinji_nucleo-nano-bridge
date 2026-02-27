@@ -14,9 +14,10 @@ LedState prev_state = LedState::OFF;
 
 bool can_status1[2] = {false}; // false: can生きてる, true: can死んでる, [0]: CAN1, [1]: CAN2
 int can_error_count[2] = {0};
+bool uart_status = false; // false: uart生きてる, true: uart死んでる
+int uart_error_count = 0;
 
 bool can_status2[2] = {false}; // false: can生きてる, true: can死んでる, [0]: CAN1, [1]: CAN2
-bool uart_status = false; // false: uart生きてる, true: uart死んでる
 
 bool is_completed = false; // 条件達成時true
 
@@ -52,7 +53,10 @@ int main() {
                 can_status2[0] = received_status[0];
                 can_status2[1] = received_status[1];
             } else {
-                uart_status = true;
+                uart_error_count++;
+                if (uart_error_count > 100) {
+                    uart_status = true;
+                }
             }
 
             // 状態の決定
