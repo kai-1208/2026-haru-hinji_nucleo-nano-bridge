@@ -20,7 +20,7 @@ bool uart_status = false; // false: uart生きてる, true: uart死んでる
 
 bool is_completed = false; // 条件達成時true
 
-bool multi_states[5] = {false}; // [0]: sub uart, [1]: main can1, [2]: main can2, [3]: sub can1, [4]: sub can2
+bool multi_states[12] = {false}; // false: 正常（緑点灯）, true: 異常（赤点滅） センサ系はfalse: sw押されている（黄点灯）, true: 何もなし（消灯）
 
 int main() {
     mbed::HighResClock::time_point now_time = HighResClock::now ();
@@ -68,15 +68,24 @@ int main() {
             }
 
             // multi_statesの更新
-            multi_states[0] = can_status1[0];
-            multi_states[1] = can_status1[1];
-            multi_states[2] = uart_status;
-            multi_states[3] = can_status2[0];
-            multi_states[4] = can_status2[1];
+            multi_states[0] = can_status1[0]; // main nucleoのcan1
+            multi_states[1] = can_status1[1]; // main nucleoのcan2
+            multi_states[2] = uart_status;    // main nucleoのuart
+            multi_states[3] = can_status2[0]; // sub nucleoのcan1
+            multi_states[4] = can_status2[1]; // sub nucleoのcan2
+            multi_states[5] = false; // sub nucleoのuart（arduino側で検知）
+
+            // センサの状態の更新（仮ですべてfalse（消灯））
+            multi_states[6] = false;          // limitsw1
+            multi_states[7] = false;          // limitsw2
+            multi_states[8] = false;          // limitsw3
+            multi_states[9] = false;          // limitsw4
+            multi_states[10] = false;         // limitsw5
+            multi_states[11] = false;        // limitsw6
 
             // 状態送信
             if (curr_state != prev_state) {
-                led.sendLedState(curr_state, multi_states, 5);
+                led.sendLedState(curr_state, multi_states, 12);
                 prev_state = curr_state;
             }
         }
