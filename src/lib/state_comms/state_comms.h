@@ -20,7 +20,7 @@ public:
      * @param num_states 送受信するbool値の数
      * @param baud ボーレート
      */
-    StateComms(PinName tx, PinName rx, int num_states, int baud = 9600) 
+    StateComms(PinName tx, PinName rx, int num_states, int baud) 
         : _serial(tx, rx), _num_states(num_states) {
         _serial.set_baud(baud);
         _rx_index = 0;
@@ -56,51 +56,53 @@ public:
      * @return 更新成功ならtrue
      */
     bool read(bool* out_states) {
-        if (!_serial.readable()) {
-            return false;
-        }
+        bool updated = false;
 
-        char c;
-        ssize_t n = _serial.read(&c, 1);
-        
-        if (n > 0) {
-            if (c == '\n') {
-                _rx_buffer[_rx_index] = '\0';
-                _rx_index = 0;
+        // データがある限り読み続ける
+        while (_serial.readable()) {
+            char c;
+            if (_serial.read(&c, 1) > 0) {
+                // printf("%c", c);
+                // 改行コードでパース実行
+                if (c == '\n') {
+                    _rx_buffer[_rx_index] = '\0';
+                    // printf("RX: %s\n", _rx_buffer);
+                    _rx_index = 0;
 
-                char* token = strtok(_rx_buffer, ",");
-                int count = 0;
-                
-                // 一時的に値を保持する配列
-                // (パース失敗時に元のデータを壊さないため)
-                bool temp_values[_num_states];
+                    // --- パース処理 ---
+                    char* token = strtok(_rx_buffer, ",");
+                    int count = 0;
+                    bool temp_values[_num_states]; // 一時バッファ
 
-                while (token != NULL && count < _num_states) {
-                    // "0"以外ならtrue、"0"ならfalseとして解釈
-                    int val = atoi(token);
-                    temp_values[count] = (val != 0);
-                    
-                    token = strtok(NULL, ",");
-                    count++;
-                }
-
-                // 数が一致した場合のみ採用
-                if (count == _num_states) {
-                    for(int i=0; i<_num_states; i++){
-                        out_states[i] = temp_values[i];
+                    while (token != NULL && count < _num_states) {
+                        temp_values[count] = (atoi(token) != 0);
+                        token = strtok(NULL, ",");
+                        count++;
                     }
-                    return true;
-                }
 
-            } else {
-                if (_rx_index < sizeof(_rx_buffer) - 1) {
-                    _rx_buffer[_rx_index++] = c;
+                    if (count == _num_states) {
+                        for(int i=0; i<_num_states; i++){
+                            out_states[i] = temp_values[i];
+                        }
+                        updated = true; // 更新フラグを立てる
+                        // ここでreturn trueすると、バッファに残ったゴミデータで次回ずれる可能性があるので
+                        // 最新のデータを取り切るまでループを回し続けてもよいが、
+                        // 一旦ここで return true して処理を返したほうが反応が良い場合が多い。
+                        return true; 
+                    } else {
+                        // printf("Count mismatch: %d != %d\n", count, _num_states);
+                    }
                 } else {
-                    _rx_index = 0; // オーバーフローリセット
+                    // バッファへの蓄積
+                    if (_rx_index < sizeof(_rx_buffer) - 1) {
+                        _rx_buffer[_rx_index++] = c;
+                    } else {
+                        _rx_index = 0; // オーバーフロー時はリセット
+                    }
                 }
             }
         }
-        return false;
+        return updated;
     }
 };
 
