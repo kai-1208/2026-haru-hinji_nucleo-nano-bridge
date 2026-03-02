@@ -12,7 +12,7 @@ StateComms comms(PA_9, PA_10, 2, 9600); // tx, rx, 送信するデータ数, ボ
 LedState curr_state = LedState::OFF;
 LedState prev_state = LedState::OFF;
 
-DigitalIn limit_sw1(PC_10), limit_sw2(PC_11), limit_sw3(PC_12), limit_sw4(PC_0), limit_sw5(PC_1), limit_sw6(PC_2), emergency_sw(PC_13);
+DigitalIn limit_sw1(PC_10), limit_sw2(PC_11), limit_sw3(PC_12), limit_sw4(PC_0), limit_sw5(PC_1), limit_sw6(PC_2);
 
 bool can_status1[2] = {false}; // false: can生きてる, true: can死んでる, [0]: CAN1, [1]: CAN2
 int can_error_count[2] = {0};
@@ -21,14 +21,13 @@ bool uart_status = false; // false: uart生きてる, true: uart死んでる
 int uart_error_count = 0;
 
 bool can_status2[2] = {false}; // false: can生きてる, true: can死んでる, [0]: CAN1, [1]: CAN2
-bool multi_states[13] = {false}; // [0-5] false: 正常（緑点灯）, true: 異常（赤点滅） リミットスイッチ[6-11] false: sw押されている（黄点灯）, true: 何もなし（緑点灯） 緊急スイッチ[12] false: sw押されている（赤点滅）, true: 何もなし（緑点灯）
+bool multi_states[12] = {false}; // [0-5] false: 正常（緑点灯）, true: 異常（赤点滅） リミットスイッチ[6-11] false: sw押されている（黄点灯）, true: 何もなし（緑点灯） 緊急スイッチ[12] false: sw押されている（赤点滅）, true: 何もなし（緑点灯）
 int32_t current_completion_index = 0;
 
 int main() {
     led.setup();
     limit_sw1.mode(PullUp); limit_sw2.mode(PullUp); limit_sw3.mode(PullUp);
     limit_sw4.mode(PullUp); limit_sw5.mode(PullUp); limit_sw6.mode(PullUp);
-    emergency_sw.mode(PullUp);
 
     mbed::HighResClock::time_point now_time = HighResClock::now ();
     mbed::HighResClock::time_point curr_time = HighResClock::now ();
@@ -39,7 +38,7 @@ int main() {
         // main nucleoのcan, uart状態
         bool received_status[2];
         if (comms.read(received_status)) {
-            printf("received\n");
+            // printf("received\n");
             uart_error_count = 0;
             uart_status = false;
             can_status2[0] = received_status[0];
@@ -61,17 +60,17 @@ int main() {
             } else {
                 can_error_count[1]++;
             }
-            can_status1[0] = (can_error_count[0] > 300);
-            can_status1[1] = (can_error_count[1] > 300);
+            can_status1[0] = (can_error_count[0] > 2000);
+            can_status1[1] = (can_error_count[1] > 2000);
 
             uart_error_count++;
 
-            if (uart_error_count > 300) {
+            if (uart_error_count > 2000) {
                 uart_status = true;
             }
 
             // 状態の決定
-            if (current_completion_index == 9) {
+            if (current_completion_index == 10) {
                 curr_state = LedState::Clear;
             } else if (uart_status) {
                 curr_state = LedState::UARTLost;
@@ -97,8 +96,9 @@ int main() {
             multi_states[10] = !limit_sw5.read();  // limitsw5
             multi_states[11] = !limit_sw6.read();  // limitsw6
 
-            // 緊急スイッチが押されたらtrue: 消灯, false: 通常点灯
-            multi_states[12] = !emergency_sw.read(); // emergency_sw
+            printf("[0]:%d, [1]:%d, [2]:%d, [3]:%d, [4]:%d, [5]:%d, [6]:%d, [7]:%d, [8]:%d, [9]:%d, [10]:%d, [11]:%d\n", 
+                multi_states[0], multi_states[1], multi_states[2], multi_states[3], multi_states[4], multi_states[5],
+                multi_states[6], multi_states[7], multi_states[8], multi_states[9], multi_states[10], multi_states[11]);
 
             // 状態送信
             if (curr_state != prev_state) {

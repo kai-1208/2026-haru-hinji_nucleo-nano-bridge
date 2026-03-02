@@ -13,7 +13,7 @@ void LedController::sendLedState(LedState state, const bool* bool_states, int nu
     int offset = 0;
 
     // LedStateを先頭に追加 (charとして)
-    offset += sprintf(buffer + offset, "%c", static_cast<char>(state));
+    offset += sprintf(buffer + offset, "%d", static_cast<int>(state));
 
     // bool値を追加
     for (int i = 0; i < num_bools; ++i) {
