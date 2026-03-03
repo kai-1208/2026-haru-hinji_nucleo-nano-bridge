@@ -96,6 +96,7 @@ int main() {
             multi_states[10] = !limit_sw5.read();  // limitsw5
             multi_states[11] = !limit_sw6.read();  // limitsw6
 
+            printf("Current State: %c\n", (char)curr_state);
             printf("[0]:%d, [1]:%d, [2]:%d, [3]:%d, [4]:%d, [5]:%d, [6]:%d, [7]:%d, [8]:%d, [9]:%d, [10]:%d, [11]:%d\n", 
                 multi_states[0], multi_states[1], multi_states[2], multi_states[3], multi_states[4], multi_states[5],
                 multi_states[6], multi_states[7], multi_states[8], multi_states[9], multi_states[10], multi_states[11]);
